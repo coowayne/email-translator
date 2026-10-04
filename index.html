@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>專業工作郵件中翻英工具</title>
+  <style>
+    :root { --primary: #1a73e8; --border: #dadce0; --bg: #f8f9fa; --text: #202124; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 860px; margin: 30px auto; padding: 0 20px; color: var(--text); line-height: 1.6; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    label { font-weight: 500; font-size: 14px; display: block; margin-bottom: 5px; }
+    select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    textarea { height: 130px; resize: vertical; }
+    button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 14px; cursor: pointer; font-weight: 500; }
+    button:disabled { background: #9aa0a6; cursor: not-allowed; }
+    .action-row { margin: 15px 0 20px; }
+    .output-card { border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 16px; min-height: 160px; white-space: pre-wrap; font-size: 14px; position: relative; }
+    .copy-btn { position: absolute; top: 12px; right: 12px; background: #fff; color: var(--text); border: 1px solid var(--border); padding: 4px 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <h2>工作郵件中翻英工具</h2>
+
+  <div class="controls">
+    <div>
+      <label for="categorySelect">專業領域類別：</label>
+      <select id="categorySelect">
+        <option value="General">日常商務信件 (General Business)</option>
+        <option value="Electrical">電機工程 (保護電驛 / 馬達控制 / 盤體 / 停復電)</option>
+        <option value="Instrumentation">儀表控制 (變送器 / 控制閥 / DCS / 現場校正)</option>
+      </select>
+    </div>
+    <div>
+      <label for="toneSelect">語氣設定：</label>
+      <select id="toneSelect">
+        <option value="Formal">正式禮貌 (外部廠商 / 跨部門呈報)</option>
+        <option value="Direct">簡潔直效 (日常主管進度匯報 / 工單處理)</option>
+        <option value="Casual">口語/即時協作 (現場工程同仁快速溝通)</option>
+      </select>
+    </div>
+  </div>
+
+  <label for="sourceText">中文信件草稿：</label>
+  <textarea id="sourceText" placeholder="請輸入中文內容，例如：3號給水泵馬達過載跳脫，已檢查現場過流電驛並完成復歸，預計下午重新試車..."></textarea>
+
+  <div class="action-row">
+    <button id="submitBtn" onclick="executeTranslation()">生成英文信件</button>
+  </div>
+
+  <label>英文郵件建議：</label>
+  <div class="output-card">
+    <button class="copy-btn" id="copyBtn" onclick="copyOutput()" style="display: none;">複製內文</button>
+    <div id="outputContent" style="color: #5f6368;">翻譯結果將呈現於此...</div>
+  </div>
+
+  <script>
+    // 請將此處替換為您在 Cloudflare 產生的 Worker 網址
+    const WORKER_URL = "https://gemini-translator-proxy.<你的帳號名>.workers.dev";
+
+    async function executeTranslation() {
+      const text = document.getElementById('sourceText').value.trim();
+      const category = document.getElementById('categorySelect').value;
+      const tone = document.getElementById('toneSelect').value;
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const outputContent = document.getElementById('outputContent');
+      const copyBtn = document.getElementById('copyBtn');
+
+      if (!text) {
+        alert('請輸入中文信件內容');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      outputContent.style.color = '#202124';
+      outputContent.innerText = '正在處理並生成專業英文郵件...';
+      copyBtn.style.display = 'none';
+
+      const prompt = `
+你是一位專業的工程商務溝通顧問。請將使用者的中文工作草稿翻譯/改寫為符合國際工程與職場慣例的英文信件。
+領域類別: ${category}
+語氣風格: ${tone}
+
+要求：
+1. 輸出包含 Subject 與 Body。
+2. 針對工程專業術語（例如保護電驛 trip/reset、差壓變送器 DP transmitter 等）務必使用業界規範名詞。
+3. 直接輸出信件內文，無需額外解說。
+
+【中文草稿】
+${text}
+      `.trim();
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message || data.error);
+
+        const generatedText = data.candidates[0].content.parts[0].text;
+        outputContent.innerText = generatedText;
+        copyBtn.style.display = 'block';
+      } catch (err) {
+        outputContent.innerText = `發生錯誤: ${err.message}`;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    function copyOutput() {
+      const text = document.getElementById('outputContent').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.innerText = '已複製！';
+        setTimeout(() => { btn.innerText = '複製內文'; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

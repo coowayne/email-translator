@@ -14,7 +14,6 @@
       --text: #202124;
       --text-muted: #5f6368;
       --shadow-sm: 0 1px 3px rgba(60,64,67, 0.12), 0 1px 2px rgba(60,64,67, 0.08);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,9 +46,6 @@
       font-size: 24px;
       font-weight: 600;
       color: #1e293b;
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     .header p {
@@ -236,13 +232,14 @@
           <option value="Formal">正式禮貌</option>
           <option value="Direct">簡潔直效</option>
           <option value="Casual">美式口語</option>
+          <option value="Literal">中文直譯</option>
         </select>
       </div>
     </div>
 
     <!-- 中文草稿輸入區 -->
     <label for="sourceText">中文信件草稿：</label>
-    <textarea id="sourceText" placeholder="請輸入中文內容，例如：3號給水泵馬達過載跳脫，已檢查現場過流電驛並完成復歸，預計下午重新試車..."></textarea>
+    <textarea id="sourceText" placeholder="請輸入中文內容，例如：原先這幾項的單位都是攝氏，後來為了符合美國習慣改成華氏，不過經現場實際使用，由於絕大多數表頭單位都為攝氏，因此決定還是改回攝氏，請協助將單位以及敘述改回原本的內容..."></textarea>
     
     <!-- 聲明與免責小字 -->
     <div class="disclaimer">
@@ -311,7 +308,8 @@
     const TONE_GUIDES = {
       Formal: '用於對外原廠技術支援 (Vendor/OEM)、外部稽核、跨廠處正式報告。文法完整嚴謹，語氣客氣尊重。',
       Direct: '用於日常主管進度回報、工單紀錄、交接清單。條理清晰，重點直接列出，避免贅詞。',
-      Casual: '道地美式工作口語風格（American Workplace Casual，適用於現場同仁、日常 Email 或 Teams/Slack 溝通）。語句自然親切、多用主動語態與美式常見短語（如 heads up, loop in, touch base, on track），可適度使用常見口語縮寫，但仍保持職場專業。'
+      Casual: '道地美式工作口語風格（American Workplace Casual）。語句自然親切、多用主動語態與美式常見短語，可適度使用常見口語縮寫，保持職場專業。',
+      Literal: '中文純文字直譯模式。嚴禁添加任何額外的問候語（如 Hi/Dear）、客套話、致謝詞（如 Thank you）或信件簽名檔（如 Best regards）。僅針對使用者提供的中文原意進行精確直譯，不產出 Email 主旨 (Subject)，直接輸出純翻譯英文段落。'
     };
 
     async function executeTranslation() {
@@ -343,8 +341,20 @@
       const domainInstruction = DOMAIN_GUIDES[category] || DOMAIN_GUIDES.General;
       const toneInstruction = TONE_GUIDES[tone] || TONE_GUIDES.Direct;
 
+      // 根據是否為中文直譯動態微調輸出要求
+      const isLiteral = (tone === 'Literal');
+      const formatInstruction = isLiteral
+        ? `1. 嚴格禁止輸出 "Subject:"、稱謂或簽名結尾。
+2. 嚴禁任何客套問候或感謝句，僅忠實翻譯輸入文字本身。
+3. 嚴格遵守該領域專屬名詞規範。
+4. 直接輸出翻譯後純文字段落。`
+        : `1. Subject: [產生 1 個精準且符合指定語氣與領域的 Email Subject]
+2. Body: [包含開頭稱謂、條理清楚的陳述、具體後續行動或訴求、標準簽名結尾]
+3. 嚴格遵守該領域專屬名詞與規範，禁止生硬直譯。
+4. 直接輸出信件內容，無須額外的解釋或客套話。`;
+
       const prompt = `
-你是一位精通跨國重工業現場、工程運作與商務財務流程的專業溝通顧問。請將中文工作草稿改寫為符合國際慣例的專業英文信件。
+你是一位精通跨國重工業現場、工程運作與商務財務流程的專業溝通顧問。請將中文工作草稿改寫為符合國際慣例的專業英文內容。
 
 【領域專屬規範】
 ${domainInstruction}
@@ -353,10 +363,7 @@ ${domainInstruction}
 ${toneInstruction}
 
 【輸出格式要求】
-1. Subject: [產生 1 個精準且符合指定語氣與領域的 Email Subject]
-2. Body: [包含開頭稱謂、條理清楚的陳述、具體後續行動或訴求、標準簽名結尾]
-3. 嚴格遵守該領域專屬名詞與規範，禁止生硬直譯。
-4. 直接輸出信件內容，無須額外的解釋或客套話。
+${formatInstruction}
 
 【中文草稿】
 ${text}

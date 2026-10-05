@@ -5,17 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>專業工作郵件中翻英工具</title>
   <style>
-    :root { --primary: #1a73e8; --border: #dadce0; --bg: #f8f9fa; --text: #202124; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 860px; margin: 30px auto; padding: 0 20px; color: var(--text); line-height: 1.6; }
-    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    :root {
+      --primary: #1a73e8;
+      --border: #dadce0;
+      --bg: #f8f9fa;
+      --text: #202124;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 860px;
+      margin: 30px auto;
+      padding: 0 20px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    h2 { margin-bottom: 20px; font-size: 22px; }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
     label { font-weight: 500; font-size: 14px; display: block; margin-bottom: 5px; }
-    select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
     textarea { height: 130px; resize: vertical; }
-    button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 14px; cursor: pointer; font-weight: 500; }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover { background: #1557b0; }
     button:disabled { background: #9aa0a6; cursor: not-allowed; }
     .action-row { margin: 15px 0 20px; }
-    .output-card { border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 16px; min-height: 160px; white-space: pre-wrap; font-size: 14px; position: relative; }
-    .copy-btn { position: absolute; top: 12px; right: 12px; background: #fff; color: var(--text); border: 1px solid var(--border); padding: 4px 10px; font-size: 12px; }
+    .output-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      padding: 16px;
+      min-height: 160px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    .copy-btn:hover { background: #eee; }
   </style>
 </head>
 <body>
@@ -27,8 +81,9 @@
       <label for="categorySelect">專業領域類別：</label>
       <select id="categorySelect">
         <option value="General">日常商務信件 (General Business)</option>
-        <option value="Electrical">電機工程 (保護電驛 / 馬達控制 / 盤體 / 停復電)</option>
-        <option value="Instrumentation">儀表控制 (變送器 / 控制閥 / DCS / 現場校正)</option>
+        <option value="Electrical">電機工程 (Electrical)</option>
+        <option value="Instrumentation">儀表控制 (Instrument)</option>
+        <option value="Accounting">會計 (Accounting)</option>
       </select>
     </div>
     <div>
@@ -42,7 +97,7 @@
   </div>
 
   <label for="sourceText">中文信件草稿：</label>
-  <textarea id="sourceText" placeholder="請輸入中文內容，例如：3號給水泵馬達過載跳脫，已檢查現場過流電驛並完成復歸，預計下午重新試車..."></textarea>
+  <textarea id="sourceText" placeholder="請輸入中文內容，例如：上個月廠商的發票品項跟PO金額對不起來，請他們重新開立發票後我們才能安排付款..."></textarea>
 
   <div class="action-row">
     <button id="submitBtn" onclick="executeTranslation()">生成英文信件</button>
@@ -55,8 +110,51 @@
   </div>
 
   <script>
-    // 已綁定您的 Cloudflare Worker 網址
+    // 已綁定您的 Cloudflare Worker 代理網址
     const WORKER_URL = "https://gemini-translator-proxy.wandering-poetry-ecb7.workers.dev";
+
+    // 領域專屬深度指引
+    const DOMAIN_GUIDES = {
+      General: `
+- 著重一般商務溝通、專案時程推進、跨部門協作禮貌用語。
+- 語意流暢自然，符合現代國際職場習慣。
+      `,
+      Electrical: `
+- 適用高低壓配電、盤體、馬達控制中心 (MCC)、保護電驛、停復電作業。
+- 專用術語規範：
+  * 跳脫/復歸請使用 trip / reset (切勿直譯為 jump 或 restore)。
+  * 保護電驛 (Protection Relay)、比壓器/比流器 (PT / CT)、斷路器 (Breaker / VCB / ACB)。
+  * 故障/異常請使用 fault / abnormal / trip on overload (過載跳脫)。
+  * 送電/停電請使用 energize / de-energize。
+  * 互鎖機制使用 interlock。
+      `,
+      Instrumentation: `
+- 適用儀表、控制閥、DCS/PLC、變送器、現場校正。
+- 專用術語規範：
+  * 變送器請使用 transmitter (如差壓變送器 DP transmitter、壓力變送器 PT)。
+  * 訊號偏移請使用 drift (如 zero drift 零點漂移)。
+  * 校正請使用 calibrate / recalibrate。
+  * 控制閥動作請使用 valve hunting (擺盪)、stroke test (行程測試)、fail-safe position。
+  * 回路測試請使用 loop check。
+      `,
+      Accounting: `
+- 適用財務會計、應收應付帳款 (AR/AP)、請款發票審核、對帳與審計溝通。
+- 專用術語規範：
+  * 發票/請款請使用 invoice / billing / claim；發票核銷/沖銷請使用 write-off / offset / reconcile。
+  * 對帳請使用 bank reconciliation / account reconciliation。
+  * 款項逾期請使用 overdue payment / past due；付款條件請使用 payment terms (如 Net 30)。
+  * 傳票/分錄請使用 journal entry / voucher。
+  * 預付款/遞延請使用 prepayment / advance payment / accrual / deferred expense。
+  * 採購訂單請使用 PO (Purchase Order)；報銷請使用 reimbursement / expense report。
+      `
+    };
+
+    // 語氣深度指引
+    const TONE_GUIDES = {
+      Formal: '用於對外原廠技術支援 (Vendor/OEM)、會計外部稽核、跨廠處正式報告。文法完整嚴謹，語氣客氣尊重。',
+      Direct: '用於日常主管進度回報、工單 (Work Order) 紀錄、交接清單 (Handover)、帳務審查。條理清晰，重點直接列出，避免贅詞。',
+      Casual: '用於現場工程師、同組維修班同仁即時通訊 (Teams/Slack)。簡短明瞭，採用工作現場俚語與縮寫。'
+    };
 
     async function executeTranslation() {
       const text = document.getElementById('sourceText').value.trim();
@@ -77,15 +175,23 @@
       outputContent.innerText = '正在處理並生成專業英文郵件...';
       copyBtn.style.display = 'none';
 
-      const prompt = `
-你是一位專業的工程商務溝通顧問。請將使用者的中文工作草稿翻譯/改寫為符合國際工程與職場慣例的英文信件。
-領域類別: ${category}
-語氣風格: ${tone}
+      const domainInstruction = DOMAIN_GUIDES[category] || DOMAIN_GUIDES.General;
+      const toneInstruction = TONE_GUIDES[tone] || TONE_GUIDES.Direct;
 
-要求：
-1. 輸出包含 Subject 與 Body。
-2. 針對工程專業術語（例如保護電驛 trip/reset、差壓變送器 DP transmitter 等）務必使用業界規範名詞。
-3. 直接輸出信件內文，無需額外解說。
+      const prompt = `
+你是一位精通跨國重工業現場、工程運作與商務財務流程的專業溝通顧問。請將中文工作草稿改寫為符合國際慣例的專業英文信件。
+
+【領域專屬規範】
+${domainInstruction}
+
+【溝通語氣規範】
+${toneInstruction}
+
+【輸出格式要求】
+1. Subject: [產生 1 個精準且包含關鍵主旨的 Email Subject]
+2. Body: [包含專業稱謂、條理清楚的陳述、具體後續行動或訴求、標準簽名結尾]
+3. 嚴格遵守該領域專屬名詞與現場工程/財務規範，禁止非專業背景的直譯。
+4. 直接輸出信件內容，無須額外的解釋或客套話。
 
 【中文草稿】
 ${text}

@@ -54,7 +54,6 @@
       margin-top: 4px;
     }
 
-    /* 三欄排版配置 */
     .controls {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -229,7 +228,7 @@
       <p>專為現場工程、維運與商務協作設計的術語與語氣優化系統</p>
     </div>
 
-    <!-- 屬性選單（專業領域、語氣設定、心情） -->
+    <!-- 屬性選單 -->
     <div class="controls">
       <div>
         <label for="categorySelect">專業領域類別：</label>
@@ -284,7 +283,6 @@
         <button class="copy-btn" id="copyBtn" onclick="copyOutput()" style="display: none;">複製內文</button>
         <div id="outputContent" style="color: var(--text-muted);">翻譯結果將呈現於此...</div>
       </div>
-      <!-- 模型資訊標籤 -->
       <div id="modelBadge" class="model-badge" style="display: none;"></div>
     </div>
   </div>
@@ -292,55 +290,41 @@
   <script>
     const WORKER_URL = "https://gemini-translator-proxy.wandering-poetry-ecb7.workers.dev";
 
-    // 領域專屬深度指引
-    const DOMAIN_GUIDES = {
-      General: `
-- 著重日常工作聯繫、行程協調、跨部門協同與常規事務溝通。
-- 語意流暢自然，符合現代國際職場習慣。
-      `,
+    const DOMAIN_GLOSSARY = {
+      General: ``,
       Electrical: `
-- 適用高低壓配電、盤體、馬達控制中心 (MCC)、保護電驛、停復電作業。
-- 專用術語規範：
-  * 跳脫/復歸請使用 trip / reset (切勿直譯為 jump 或 restore)。
-  * 保護電驛 (Protection Relay)、比壓器/比流器 (PT / CT)、斷路器 (Breaker / VCB / ACB)。
-  * 故障/異常請使用 fault / abnormal / trip on overload (過載跳脫)。
-  * 送電/停電請使用 energize / de-energize。
-  * 互鎖機制使用 interlock。
+- 電機術語對照字典（僅供置換，草稿未提及則忽略）：
+  * 跳脫/復歸: trip / reset
+  * 電驛/比壓/比流/開關: protection relay / PT / CT / circuit breaker
+  * 送電/停電: energize / de-energize
+  * 故障跳脫: trip on fault / overload
       `,
       Instrumentation: `
-- 適用儀表、控制閥、DCS/PLC、變送器、現場校正。
-- 專用術語規範：
-  * 變送器請使用 transmitter (如差壓變送器 DP transmitter、壓力變送器 PT)。
-  * 訊號偏移請使用 drift (如 zero drift 零點漂移)。
-  * 校正請使用 calibrate / recalibrate。
-  * 控制閥動作請使用 valve hunting (擺盪)、stroke test (行程測試)、fail-safe position。
-  * 回路測試請使用 loop check。
+- 儀表術語對照字典（僅供置換，草稿未提及則忽略）：
+  * 變送器: transmitter (DP transmitter, PT)
+  * 漂移/校正: drift / calibrate / recalibrate
+  * 控制閥動作: valve hunting, stroke test, fail-safe position
+  * 回路測試: loop check
       `,
       Accounting: `
-- 適用財務會計、應收應付帳款 (AR/AP)、請款發票審核、對帳與審計溝通。
-- 專用術語規範：
-  * 發票/請款請使用 invoice / billing / claim；發票核銷/沖銷請使用 write-off / offset / reconcile。
-  * 對帳請使用 bank reconciliation / account reconciliation。
-  * 款項逾期請使用 overdue payment / past due；付款條件請使用 payment terms (如 Net 30)。
-  * 傳票/分錄請使用 journal entry / voucher。
-  * 預付款/遞延請使用 prepayment / advance payment / accrual / deferred expense。
-  * 採購訂單請使用 PO (Purchase Order)；報銷請使用 reimbursement / expense report。
+- 會計術語對照字典（僅供置換，草稿未提及則忽略）：
+  * 發票/沖銷/對帳: invoice / billing / write-off / reconcile / account reconciliation
+  * 逾期/付款條件: overdue / past due / payment terms
+  * 傳票/報銷: voucher / journal entry / reimbursement
       `
     };
 
-    // 語氣深度指引
     const TONE_GUIDES = {
-      Formal: '用於對外原廠技術支援 (Vendor/OEM)、外部稽核、跨廠處正式報告。文法完整嚴謹，語氣客氣尊重。',
-      Direct: '用於日常主管進度回報、工單紀錄、交接清單。條理清晰，重點直接列出，避免贅詞。',
-      Casual: '道地美式工作口語風格（American Workplace Casual）。語句自然親切、多用主動語態與美式常見短語，可適度使用常見口語縮寫，保持職場專業。',
-      Literal: '中文純文字直譯模式。嚴禁添加任何額外的問候語（如 Hi/Dear）、客套話、致謝詞（如 Thank you）或信件簽名檔（如 Best regards）。僅針對使用者提供的中文原意進行精確直譯，不產出 Email 主旨 (Subject)，直接輸出純翻譯英文段落。'
+      Formal: '商務正式風格。文法完整嚴謹，語氣客氣尊重。',
+      Direct: '簡潔直效風格。直奔主題，語句乾脆精準，無冗詞。',
+      Casual: '美式職場口語風格。自然親切、使用美式職場常用短語。',
+      Literal: '純文字直譯模式。嚴禁生成 Subject、開頭問候、結尾簽名或感謝句，只逐句直譯中文草稿。'
     };
 
-    // 心情深度指引
     const MOOD_GUIDES = {
-      Normal: '心情客觀平實，保持專業中立，不帶多餘主觀情緒色彩。',
-      Happy: '心情愉快且熱情，多用肯定、感激與正向詞句（例如 appreciate your prompt support, glad to work on this, looking forward to），展現高度團隊合作氛圍。',
-      Angry: '發信人目前處於生氣或極度不滿的狀態。請在維持職場專業禮儀（不可出現謾罵或失禮粗話）的前提下，將情緒轉化為極為嚴正、堅定（Firm & Stern）且具有急迫感的書面語氣。強調問題的不可接受性、延遲後果與責任歸屬（例如 This delay is unacceptable, Immediate action is required, Please treat this with highest urgency）。'
+      Normal: '情緒客觀平實，中立理性。',
+      Happy: '情緒愉快友善，語氣熱情配合。',
+      Angry: '情緒嚴正堅定（Firm & Stern）。在符合職場禮貌前提下，展現問題嚴重性與緊迫感。'
     };
 
     async function executeTranslation() {
@@ -372,43 +356,43 @@
       copyBtn.style.display = 'none';
       modelBadge.style.display = 'none';
 
-      const domainInstruction = DOMAIN_GUIDES[category] || DOMAIN_GUIDES.General;
+      const glossary = DOMAIN_GLOSSARY[category] || '';
       const toneInstruction = TONE_GUIDES[tone] || TONE_GUIDES.Direct;
       const isLiteral = (tone === 'Literal');
-
-      // 若為直譯，忽略情緒修飾詞以免破壞原句；若非直譯，融入情緒指引
-      const moodInstruction = isLiteral
-        ? '直譯模式下，請忽略任何心情修飾，嚴格按照原文直譯。'
-        : (MOOD_GUIDES[mood] || MOOD_GUIDES.Normal);
+      const moodInstruction = isLiteral ? '直譯模式：忽略情緒修飾，直接直譯。' : (MOOD_GUIDES[mood] || MOOD_GUIDES.Normal);
 
       const formatInstruction = isLiteral
-        ? `1. 嚴格禁止輸出 "Subject:"、稱謂或簽名結尾。
-2. 嚴禁任何客套問候或感謝句，僅忠實翻譯輸入文字本身。
-3. 若輸入內容包含專有名詞，嚴格遵守該領域專屬名詞規範；若未包含，忠實直譯即可。
-4. 直接輸出翻譯後純文字段落。`
-        : `1. Subject: [產生 1 個精準切合【中文草稿】核心內容的 Email Subject]
-2. Body: [包含開頭稱謂、忠實表達草稿意圖的內文、結尾簽名]
-3. 【嚴格限制】：信件主旨與內容必須完全錨定在【中文草稿】實際提及的事項上。嚴禁憑空編造草稿中完全未提及的現場工程進度、校正數據、設備故障或會議安排。
-4. 【術語使用規則】：【領域專屬術語參考】僅作為術語對照參考，只有當草稿內容涉及該類設備時才需規範使用，若草稿未提及相關設備，切勿硬塞術語。
-5. 充分體現指定的情緒與語氣，但保持職場基本禮貌。
-6. 直接輸出信件內容，無須額外解釋。`;
+        ? `1. 絕對禁止生成 "Subject:"、稱謂或簽名結尾。
+2. 絕對禁止任何客套問候或感謝句。
+3. 嚴格逐句翻譯草稿，直接輸出純文字英文。`
+        : `1. 格式：
+   Subject: [簡短精確切合草稿主題]
+   
+   Dear [Name],
+   [正文]
+   
+   Best regards,
+   [Your Name]
+2. 【核心嚴禁事項】：
+   - 資訊量必須與中文草稿嚴格等比！草稿只寫一句話，正文就只能寫 1-2 句話。
+   - 絕對禁止虛構草稿未提及的情節（如設備測試、會議日程、技術評估、待辦事項清單）。
+   - 【術語對照字典】僅作為字典使用。若草稿未涉及字典中的設備或名詞，嚴禁自行塞入這些詞彙！
+3. 請依照指定的語氣與心情進行文字潤飾，但不可無中生有。
+4. 直接輸出信件內容，無須任何前言或結語解釋。`;
 
       const prompt = `
-你是一位專業的職場與工程溝通翻譯顧問。你的首要任務是「忠實轉譯並潤飾」使用者的中文草稿。
+你是一位專業中翻英翻譯助手。你的唯一任務是將【中文草稿】翻譯並潤飾成英文信件。
 
-【領域專屬術語參考】
-${domainInstruction}
+【術語對照字典（僅供名詞置換，草稿未提及則徹底忽略）】
+${glossary}
 
-【溝通語氣規範】
-${toneInstruction}
+【語氣設定】: ${toneInstruction}
+【發信心情】: ${moodInstruction}
 
-【發信者心情傾向】
-${moodInstruction}
-
-【輸出格式要求】
+【輸出格式與邊界規則】
 ${formatInstruction}
 
-【中文草稿（核心依據，不可脫離原意自行編造情節）】
+【中文草稿（這是唯一的事實來源，嚴禁自行延伸或腦補情節）】
 ${text}
       `.trim();
 

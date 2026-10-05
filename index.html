@@ -205,6 +205,20 @@
       background: #f1f3f4;
       border-color: #bdc1c6;
     }
+
+    /* 模型資訊標籤 */
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      background: #f1f3f4;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
   </style>
 </head>
 <body>
@@ -262,6 +276,8 @@
         <button class="copy-btn" id="copyBtn" onclick="copyOutput()" style="display: none;">複製內文</button>
         <div id="outputContent" style="color: var(--text-muted);">翻譯結果將呈現於此...</div>
       </div>
+      <!-- 模型資訊標籤 -->
+      <div id="modelBadge" class="model-badge" style="display: none;"></div>
     </div>
   </div>
 
@@ -323,6 +339,7 @@
       const outputCard = document.getElementById('outputCard');
       const outputContent = document.getElementById('outputContent');
       const copyBtn = document.getElementById('copyBtn');
+      const modelBadge = document.getElementById('modelBadge');
 
       if (!text) {
         alert('請輸入中文信件內容');
@@ -337,11 +354,11 @@
       outputContent.style.color = 'var(--text-muted)';
       outputContent.innerText = '正在處理並優化專業語氣...';
       copyBtn.style.display = 'none';
+      modelBadge.style.display = 'none';
 
       const domainInstruction = DOMAIN_GUIDES[category] || DOMAIN_GUIDES.General;
       const toneInstruction = TONE_GUIDES[tone] || TONE_GUIDES.Direct;
 
-      // 根據是否為中文直譯動態微調輸出要求
       const isLiteral = (tone === 'Literal');
       const formatInstruction = isLiteral
         ? `1. 嚴格禁止輸出 "Subject:"、稱謂或簽名結尾。
@@ -384,6 +401,12 @@ ${text}
         outputContent.innerText = generatedText;
         outputCard.classList.add('active');
         copyBtn.style.display = 'block';
+
+        // 呈現本次成功調用的模型名稱
+        if (data.usedModel) {
+          modelBadge.innerText = `⚡ 本次生成模型：${data.usedModel}`;
+          modelBadge.style.display = 'inline-flex';
+        }
       } catch (err) {
         outputContent.style.color = '#d93025';
         outputContent.innerText = `發生錯誤: ${err.message}`;

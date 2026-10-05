@@ -54,14 +54,15 @@
       margin-top: 4px;
     }
 
+    /* 三欄排版配置 */
     .controls {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
       margin-bottom: 20px;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 720px) {
       .controls { grid-template-columns: 1fr; }
       .container { padding: 20px; }
     }
@@ -206,7 +207,6 @@
       border-color: #bdc1c6;
     }
 
-    /* 模型資訊標籤 */
     .model-badge {
       display: inline-flex;
       align-items: center;
@@ -229,7 +229,7 @@
       <p>專為現場工程、維運與商務協作設計的術語與語氣優化系統</p>
     </div>
 
-    <!-- 屬性選單 -->
+    <!-- 屬性選單（專業領域、語氣設定、心情） -->
     <div class="controls">
       <div>
         <label for="categorySelect">專業領域類別：</label>
@@ -249,11 +249,19 @@
           <option value="Literal">中文直譯</option>
         </select>
       </div>
+      <div>
+        <label for="moodSelect">發信心情：</label>
+        <select id="moodSelect">
+          <option value="Normal">正常 (客觀中立)</option>
+          <option value="Happy">愉快 (熱情正面)</option>
+          <option value="Angry">生氣 (嚴肅堅定)</option>
+        </select>
+      </div>
     </div>
 
     <!-- 中文草稿輸入區 -->
     <label for="sourceText">中文信件草稿：</label>
-    <textarea id="sourceText" placeholder="請輸入中文內容，例如：原先這幾項的單位都是攝氏，後來為了符合美國習慣改成華氏，不過經現場實際使用，由於絕大多數表頭單位都為攝氏，因此決定還是改回攝氏，請協助將單位以及敘述改回原本的內容..."></textarea>
+    <textarea id="sourceText" placeholder="請輸入中文內容..."></textarea>
     
     <!-- 聲明與免責小字 -->
     <div class="disclaimer">
@@ -328,10 +336,18 @@
       Literal: '中文純文字直譯模式。嚴禁添加任何額外的問候語（如 Hi/Dear）、客套話、致謝詞（如 Thank you）或信件簽名檔（如 Best regards）。僅針對使用者提供的中文原意進行精確直譯，不產出 Email 主旨 (Subject)，直接輸出純翻譯英文段落。'
     };
 
+    // 心情深度指引
+    const MOOD_GUIDES = {
+      Normal: '心情客觀平實，保持專業中立，不帶多餘主觀情緒色彩。',
+      Happy: '心情愉快且熱情，多用肯定、感激與正向詞句（例如 appreciate your prompt support, glad to work on this, looking forward to），展現高度團隊合作氛圍。',
+      Angry: '發信人目前處於生氣或極度不滿的狀態。請在維持職場專業禮儀（不可出現謾罵或失禮粗話）的前提下，將情緒轉化為極為嚴正、堅定（Firm & Stern）且具有急迫感的書面語氣。強調問題的不可接受性、延遲後果與責任歸屬（例如 This delay is unacceptable, Immediate action is required, Please treat this with highest urgency）。'
+    };
+
     async function executeTranslation() {
       const text = document.getElementById('sourceText').value.trim();
       const category = document.getElementById('categorySelect').value;
       const tone = document.getElementById('toneSelect').value;
+      const mood = document.getElementById('moodSelect').value;
       
       const submitBtn = document.getElementById('submitBtn');
       const btnText = document.getElementById('btnText');
@@ -358,17 +374,23 @@
 
       const domainInstruction = DOMAIN_GUIDES[category] || DOMAIN_GUIDES.General;
       const toneInstruction = TONE_GUIDES[tone] || TONE_GUIDES.Direct;
-
       const isLiteral = (tone === 'Literal');
+
+      // 若為直譯，忽略情緒修飾詞以免破壞原句；若非直譯，融入情緒指引
+      const moodInstruction = isLiteral
+        ? '直譯模式下，請忽略任何心情修飾，嚴格按照原文直譯。'
+        : (MOOD_GUIDES[mood] || MOOD_GUIDES.Normal);
+
       const formatInstruction = isLiteral
         ? `1. 嚴格禁止輸出 "Subject:"、稱謂或簽名結尾。
 2. 嚴禁任何客套問候或感謝句，僅忠實翻譯輸入文字本身。
 3. 嚴格遵守該領域專屬名詞規範。
 4. 直接輸出翻譯後純文字段落。`
-        : `1. Subject: [產生 1 個精準且符合指定語氣與領域的 Email Subject]
+        : `1. Subject: [產生 1 個精準且符合指定語氣、心情與領域的 Email Subject]
 2. Body: [包含開頭稱謂、條理清楚的陳述、具體後續行動或訴求、標準簽名結尾]
 3. 嚴格遵守該領域專屬名詞與規範，禁止生硬直譯。
-4. 直接輸出信件內容，無須額外的解釋或客套話。`;
+4. 充分體現指定的心情狀態，但絕不可失禮。
+5. 直接輸出信件內容，無須額外的解釋或客套話。`;
 
       const prompt = `
 你是一位精通跨國重工業現場、工程運作與商務財務流程的專業溝通顧問。請將中文工作草稿改寫為符合國際慣例的專業英文內容。
@@ -378,6 +400,9 @@ ${domainInstruction}
 
 【溝通語氣規範】
 ${toneInstruction}
+
+【發信者心情傾向】
+${moodInstruction}
 
 【輸出格式要求】
 ${formatInstruction}
@@ -402,7 +427,6 @@ ${text}
         outputCard.classList.add('active');
         copyBtn.style.display = 'block';
 
-        // 呈現本次成功調用的模型名稱
         if (data.usedModel) {
           modelBadge.innerText = `⚡ 本次生成模型：${data.usedModel}`;
           modelBadge.style.display = 'inline-flex';

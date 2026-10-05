@@ -7,116 +7,274 @@
   <style>
     :root {
       --primary: #1a73e8;
+      --primary-hover: #1557b0;
       --border: #dadce0;
+      --border-focus: #4285f4;
       --bg: #f8f9fa;
       --text: #202124;
+      --text-muted: #5f6368;
+      --shadow-sm: 0 1px 3px rgba(60,64,67, 0.12), 0 1px 2px rgba(60,64,67, 0.08);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 860px;
-      margin: 30px auto;
-      padding: 0 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f1f3f4;
       color: var(--text);
       line-height: 1.6;
+      padding: 40px 16px;
     }
-    h2 { margin-bottom: 20px; font-size: 22px; }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .header {
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+
+    .header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
     .controls {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 15px;
+      gap: 20px;
+      margin-bottom: 20px;
     }
-    label { font-weight: 500; font-size: 14px; display: block; margin-bottom: 5px; }
+
+    @media (max-width: 600px) {
+      .controls { grid-template-columns: 1fr; }
+      .container { padding: 20px; }
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 14px;
+      display: block;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
     select, textarea {
       width: 100%;
-      padding: 10px;
+      padding: 10px 14px;
       border: 1px solid var(--border);
-      border-radius: 6px;
-      box-sizing: border-box;
+      border-radius: 8px;
       font-size: 14px;
+      color: var(--text);
+      background-color: #ffffff;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    textarea { height: 130px; resize: vertical; }
-    button {
+
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+    }
+
+    textarea {
+      height: 140px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .disclaimer-icon {
+      font-size: 13px;
+      color: #f59e0b;
+      line-height: 1.3;
+    }
+
+    .action-row {
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+    }
+
+    button.primary-btn {
       background: var(--primary);
       color: white;
       border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
+      padding: 11px 24px;
+      border-radius: 8px;
       font-size: 14px;
-      cursor: pointer;
       font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: background 0.2s, transform 0.1s;
     }
-    button:hover { background: #1557b0; }
-    button:disabled { background: #9aa0a6; cursor: not-allowed; }
-    .action-row { margin: 15px 0 20px; }
+
+    button.primary-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    button.primary-btn:disabled {
+      background: #bdc1c6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      display: inline-block;
+      animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .output-section {
+      margin-top: 10px;
+    }
+
     .output-card {
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--bg);
-      padding: 16px;
+      padding: 20px;
       min-height: 160px;
       white-space: pre-wrap;
       font-size: 14px;
       position: relative;
+      color: var(--text);
+      line-height: 1.6;
     }
+
+    .output-card.active {
+      background: #ffffff;
+      border-color: #c2e7ff;
+      box-shadow: inset 0 0 0 1px #c2e7ff;
+    }
+
     .copy-btn {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      background: #fff;
+      top: 14px;
+      right: 14px;
+      background: #ffffff;
       color: var(--text);
       border: 1px solid var(--border);
-      padding: 4px 10px;
+      padding: 6px 12px;
       font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      transition: background 0.15s, border-color 0.15s;
     }
-    .copy-btn:hover { background: #eee; }
+
+    .copy-btn:hover {
+      background: #f1f3f4;
+      border-color: #bdc1c6;
+    }
   </style>
 </head>
 <body>
 
-  <h2>工作郵件中翻英工具</h2>
-
-  <div class="controls">
-    <div>
-      <label for="categorySelect">專業領域類別：</label>
-      <select id="categorySelect">
-        <option value="General">日常商務信件 (General Business)</option>
-        <option value="Electrical">電機工程 (Electrical)</option>
-        <option value="Instrumentation">儀表控制 (Instrument)</option>
-        <option value="Accounting">會計 (Accounting)</option>
-      </select>
+  <div class="container">
+    <div class="header">
+      <h2>專業工作郵件中翻英工具</h2>
+      <p>專為現場工程、維運與商務協作設計的術語與語氣優化系統</p>
     </div>
-    <div>
-      <label for="toneSelect">語氣設定：</label>
-      <select id="toneSelect">
-        <option value="Formal">正式禮貌 (外部廠商 / 跨部門呈報)</option>
-        <option value="Direct">簡潔直效 (日常主管進度匯報 / 工單處理)</option>
-        <option value="Casual">口語/即時協作 (現場工程同仁快速溝通)</option>
-      </select>
+
+    <!-- 屬性選單 -->
+    <div class="controls">
+      <div>
+        <label for="categorySelect">專業領域類別：</label>
+        <select id="categorySelect">
+          <option value="General">日常信件 (General)</option>
+          <option value="Electrical">電機工程 (Electrical)</option>
+          <option value="Instrumentation">儀表控制 (Instrument)</option>
+          <option value="Accounting">會計 (Accounting)</option>
+        </select>
+      </div>
+      <div>
+        <label for="toneSelect">語氣設定：</label>
+        <select id="toneSelect">
+          <option value="Formal">正式禮貌</option>
+          <option value="Direct">簡潔直效</option>
+          <option value="Casual">美式口語</option>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <label for="sourceText">中文信件草稿：</label>
-  <textarea id="sourceText" placeholder="請輸入中文內容，例如：上個月廠商的發票品項跟PO金額對不起來，請他們重新開立發票後我們才能安排付款..."></textarea>
+    <!-- 中文草稿輸入區 -->
+    <label for="sourceText">中文信件草稿：</label>
+    <textarea id="sourceText" placeholder="請輸入中文內容，例如：3號給水泵馬達過載跳脫，已檢查現場過流電驛並完成復歸，預計下午重新試車..."></textarea>
+    
+    <!-- 聲明與免責小字 -->
+    <div class="disclaimer">
+      <span class="disclaimer-icon">ⓘ</span>
+      <span>本系統採用 Google Gemini AI 技術自動生成翻譯與商務語氣調整。模型輸出可能偶有偏差，信件發送前請務必核對關鍵設備編號、參數數值、合約條款與收件人權限。</span>
+    </div>
 
-  <div class="action-row">
-    <button id="submitBtn" onclick="executeTranslation()">生成英文信件</button>
-  </div>
+    <!-- 操作按鈕 -->
+    <div class="action-row">
+      <button id="submitBtn" class="primary-btn" onclick="executeTranslation()">
+        <span id="btnSpinner" class="spinner" style="display: none;"></span>
+        <span id="btnText">生成英文信件</span>
+      </button>
+    </div>
 
-  <label>英文郵件建議：</label>
-  <div class="output-card">
-    <button class="copy-btn" id="copyBtn" onclick="copyOutput()" style="display: none;">複製內文</button>
-    <div id="outputContent" style="color: #5f6368;">翻譯結果將呈現於此...</div>
+    <!-- 英文結果展示區 -->
+    <div class="output-section">
+      <label>英文郵件建議：</label>
+      <div class="output-card" id="outputCard">
+        <button class="copy-btn" id="copyBtn" onclick="copyOutput()" style="display: none;">複製內文</button>
+        <div id="outputContent" style="color: var(--text-muted);">翻譯結果將呈現於此...</div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // 已綁定您的 Cloudflare Worker 代理網址
     const WORKER_URL = "https://gemini-translator-proxy.wandering-poetry-ecb7.workers.dev";
 
     // 領域專屬深度指引
     const DOMAIN_GUIDES = {
       General: `
-- 著重一般商務溝通、專案時程推進、跨部門協作禮貌用語。
+- 著重日常工作聯繫、行程協調、跨部門協同與常規事務溝通。
 - 語意流暢自然，符合現代國際職場習慣。
       `,
       Electrical: `
@@ -151,9 +309,9 @@
 
     // 語氣深度指引
     const TONE_GUIDES = {
-      Formal: '用於對外原廠技術支援 (Vendor/OEM)、會計外部稽核、跨廠處正式報告。文法完整嚴謹，語氣客氣尊重。',
-      Direct: '用於日常主管進度回報、工單 (Work Order) 紀錄、交接清單 (Handover)、帳務審查。條理清晰，重點直接列出，避免贅詞。',
-      Casual: '用於現場工程師、同組維修班同仁即時通訊 (Teams/Slack)。簡短明瞭，採用工作現場俚語與縮寫。'
+      Formal: '用於對外原廠技術支援 (Vendor/OEM)、外部稽核、跨廠處正式報告。文法完整嚴謹，語氣客氣尊重。',
+      Direct: '用於日常主管進度回報、工單紀錄、交接清單。條理清晰，重點直接列出，避免贅詞。',
+      Casual: '道地美式工作口語風格（American Workplace Casual，適用於現場同仁、日常 Email 或 Teams/Slack 溝通）。語句自然親切、多用主動語態與美式常見短語（如 heads up, loop in, touch base, on track），可適度使用常見口語縮寫，但仍保持職場專業。'
     };
 
     async function executeTranslation() {
@@ -162,6 +320,9 @@
       const tone = document.getElementById('toneSelect').value;
       
       const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+      const outputCard = document.getElementById('outputCard');
       const outputContent = document.getElementById('outputContent');
       const copyBtn = document.getElementById('copyBtn');
 
@@ -171,8 +332,12 @@
       }
 
       submitBtn.disabled = true;
-      outputContent.style.color = '#202124';
-      outputContent.innerText = '正在處理並生成專業英文郵件...';
+      btnSpinner.style.display = 'inline-block';
+      btnText.innerText = 'AI 轉譯中...';
+      
+      outputCard.classList.remove('active');
+      outputContent.style.color = 'var(--text-muted)';
+      outputContent.innerText = '正在處理並優化專業語氣...';
       copyBtn.style.display = 'none';
 
       const domainInstruction = DOMAIN_GUIDES[category] || DOMAIN_GUIDES.General;
@@ -188,9 +353,9 @@ ${domainInstruction}
 ${toneInstruction}
 
 【輸出格式要求】
-1. Subject: [產生 1 個精準且包含關鍵主旨的 Email Subject]
-2. Body: [包含專業稱謂、條理清楚的陳述、具體後續行動或訴求、標準簽名結尾]
-3. 嚴格遵守該領域專屬名詞與現場工程/財務規範，禁止非專業背景的直譯。
+1. Subject: [產生 1 個精準且符合指定語氣與領域的 Email Subject]
+2. Body: [包含開頭稱謂、條理清楚的陳述、具體後續行動或訴求、標準簽名結尾]
+3. 嚴格遵守該領域專屬名詞與規範，禁止生硬直譯。
 4. 直接輸出信件內容，無須額外的解釋或客套話。
 
 【中文草稿】
@@ -208,12 +373,17 @@ ${text}
         if (data.error) throw new Error(data.error.message || data.error);
 
         const generatedText = data.candidates[0].content.parts[0].text;
+        outputContent.style.color = 'var(--text)';
         outputContent.innerText = generatedText;
+        outputCard.classList.add('active');
         copyBtn.style.display = 'block';
       } catch (err) {
+        outputContent.style.color = '#d93025';
         outputContent.innerText = `發生錯誤: ${err.message}`;
       } finally {
         submitBtn.disabled = false;
+        btnSpinner.style.display = 'none';
+        btnText.innerText = '生成英文信件';
       }
     }
 
